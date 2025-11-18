@@ -41,7 +41,8 @@ type FeatureConfig = {
 };
 
 const API_BASE = (
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api"
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://api-gateway-datn-v2-production.up.railway.app/api"
 ).replace(/\/$/, "");
 
 const FEATURE_ENDPOINTS: Record<string, string> = {
@@ -113,7 +114,16 @@ const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
     "replace-bg": {
         label: "Background Replacement",
         description: "Xóa nền hoặc thay nền mới",
-        inputs: ["fg", "bg", "mode", "fit", "position", "featherPx", "shadow", "signTtl"],
+        inputs: [
+            "fg",
+            "bg",
+            "mode",
+            "fit",
+            "position",
+            "featherPx",
+            "shadow",
+            "signTtl",
+        ],
         defaultValues: {
             mode: "replace",
             fit: "cover",
@@ -445,7 +455,9 @@ export default function FeatureForm({
                                 <input
                                     type="file"
                                     accept="image/*"
-                                    onChange={(e) => handleImageChange(e, "main")}
+                                    onChange={(e) =>
+                                        handleImageChange(e, "main")
+                                    }
                                     className="hidden"
                                     id="image-upload"
                                 />
@@ -486,7 +498,11 @@ export default function FeatureForm({
                             Scale
                         </label>
                         <select
-                            value={formData.scale || config.defaultValues?.scale || "2"}
+                            value={
+                                formData.scale ||
+                                config.defaultValues?.scale ||
+                                "2"
+                            }
                             onChange={(e) =>
                                 setFormData({
                                     ...formData,
@@ -817,7 +833,11 @@ export default function FeatureForm({
                                 : "Comic Style"}
                         </label>
                         <select
-                            value={formData.style || config.defaultValues?.style || "anime"}
+                            value={
+                                formData.style ||
+                                config.defaultValues?.style ||
+                                "anime"
+                            }
                             onChange={(e) =>
                                 setFormData({
                                     ...formData,
@@ -830,8 +850,12 @@ export default function FeatureForm({
                                 <>
                                     <option value="anime">anime</option>
                                     <option value="ghibli">ghibli</option>
-                                    <option value="watercolor">watercolor</option>
-                                    <option value="oil-painting">oil-painting</option>
+                                    <option value="watercolor">
+                                        watercolor
+                                    </option>
+                                    <option value="oil-painting">
+                                        oil-painting
+                                    </option>
                                     <option value="sketches">sketches</option>
                                     <option value="cartoon">cartoon</option>
                                 </>
@@ -910,7 +934,9 @@ export default function FeatureForm({
                             <input
                                 type="file"
                                 accept="image/*"
-                                onChange={(e) => handleImageChange(e, "background")}
+                                onChange={(e) =>
+                                    handleImageChange(e, "background")
+                                }
                                 className="hidden"
                                 id="background-upload"
                             />
@@ -950,7 +976,10 @@ export default function FeatureForm({
                         <select
                             value={formData.fit || "cover"}
                             onChange={(e) =>
-                                setFormData({ ...formData, fit: e.target.value })
+                                setFormData({
+                                    ...formData,
+                                    fit: e.target.value,
+                                })
                             }
                             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         >
@@ -1102,7 +1131,14 @@ export default function FeatureForm({
 
                 <Button
                     type="submit"
-                    disabled={isProcessing || (!isProcessing && needsImage && !useImageUrl && !imageFile && selectedFeature !== "comic/generate")}
+                    disabled={
+                        isProcessing ||
+                        (!isProcessing &&
+                            needsImage &&
+                            !useImageUrl &&
+                            !imageFile &&
+                            selectedFeature !== "comic/generate")
+                    }
                     className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 disabled:opacity-50"
                 >
                     <Sparkles className="w-4 h-4 mr-2" />
