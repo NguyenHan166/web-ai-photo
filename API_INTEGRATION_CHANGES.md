@@ -69,7 +69,7 @@ interface ProcessResult {
 #### Image URL Extraction Priority:
 
 1. **Comic Page URL**: `result.page_url` (for comic generation)
-2. **Multiple Outputs**: `result.data.outputs[]` (for IC-Light)
+2. **Multiple Outputs**: `result.data.outputs[]` (for portraits/ic-light)
 3. **Single Image**: `result.data.presigned_url` → `result.data.url` (for all other features)
 
 #### Updated Features:
@@ -81,16 +81,16 @@ interface ProcessResult {
 
 ## API Endpoint Mapping
 
-| Feature    | Endpoint               | Method | Content-Type        | Response Type    |
-| ---------- | ---------------------- | ------ | ------------------- | ---------------- |
-| Upscale    | `/upscale`             | POST   | multipart/form-data | Single image     |
-| IC-Light   | `/portraits/ic-light`  | POST   | multipart/form-data | Multiple outputs |
-| Clarity    | `/clarity`             | POST   | multipart/form-data | Single image     |
-| Enhance    | `/enhance`             | POST   | multipart/form-data | Single image     |
-| Beautify   | `/ai-beautify`         | POST   | multipart/form-data | Single image     |
-| BG Replace | `/replace-bg`          | POST   | multipart/form-data | Single image     |
-| Style      | `/style/replace-style` | POST   | multipart/form-data | Single image     |
-| Comic      | `/comic/generate`      | POST   | application/json    | Page URL         |
+| Feature            | Endpoint                        | Method | Content-Type        | Response Type    |
+| ------------------ | ------------------------------- | ------ | ------------------- | ---------------- |
+| Upscale            | `/upscale`                      | POST   | multipart/form-data | Single image     |
+| portraits/ic-light | `/portraits/portraits/ic-light` | POST   | multipart/form-data | Multiple outputs |
+| Clarity            | `/clarity`                      | POST   | multipart/form-data | Single image     |
+| Enhance            | `/enhance`                      | POST   | multipart/form-data | Single image     |
+| Beautify           | `/ai-beautify`                  | POST   | multipart/form-data | Single image     |
+| BG Replace         | `/replace-bg`                   | POST   | multipart/form-data | Single image     |
+| Style              | `/style/replace-style`          | POST   | multipart/form-data | Single image     |
+| Comic              | `/comic/generate`               | POST   | application/json    | Page URL         |
 
 ## Error Codes Handled
 
@@ -115,7 +115,7 @@ interface ProcessResult {
     - [ ] Display presigned_url or url
     - [ ] Download works
 
-2. **IC-Light** (multiple outputs)
+2. **portraits/ic-light** (multiple outputs)
 
     - [ ] Upload image
     - [ ] Configure lighting prompt

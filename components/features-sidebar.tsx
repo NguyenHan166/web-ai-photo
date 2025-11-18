@@ -41,7 +41,7 @@ const FEATURES: Feature[] = [
         color: "from-purple-500 to-pink-500",
     },
     {
-        id: "ic-light",
+        id: "portraits/ic-light",
         name: "Relight",
         description: "Portrait relighting",
         icon: <Lightbulb className="w-5 h-5" />,
@@ -57,7 +57,7 @@ const FEATURES: Feature[] = [
         color: "from-green-500 to-emerald-500",
     },
     {
-        id: "beautify",
+        id: "ai-beautify",
         name: "Beautify",
         description: "Multi-step portrait pipeline",
         icon: <MagicWand className="w-5 h-5" />,
@@ -81,7 +81,7 @@ const FEATURES: Feature[] = [
         color: "from-pink-500 to-purple-500",
     },
     {
-        id: "comic",
+        id: "comic/generate",
         name: "Comic",
         description: "Generate comic stories",
         icon: <Film className="w-5 h-5" />,
