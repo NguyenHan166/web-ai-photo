@@ -1,0 +1,60 @@
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs
+*.log
+
+# --- Next.js Build ---
+.next/
+out/
+build/
+dist/
+
+# --- Next.js Cache ---
+.next/cache/
+.vercel/
+.vercel_build_output/
+
+# --- Environment Files ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+
+# --- Editor ---
+.vscode/
+.idea/
+*.swp
+
+# --- TypeScript ---
+*.tsbuildinfo
+
+# --- Turbo Repo (nếu dùng) ---
+.turbo/
+
+# --- Coverage ---
+coverage/
+
+# --- Optional: If using Firebase or Supabase locally ---
+.firebase/
+.supabase/
+
+# --- Optional: If using Docker ---
+docker-data/
+
+# --- Optional: Local uploads or temp files ---
+public/uploads/
+temp/
+tmp/
+
+# --- Misc ---
+*.bak
+*.tmp
