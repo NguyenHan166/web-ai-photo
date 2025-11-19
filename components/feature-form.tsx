@@ -101,10 +101,15 @@ const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
         defaultValues: { scale: "2", faceEnhance: "false" },
     },
     enhance: {
-        label: "Image Enhancement (Topaz)",
-        description: "Nâng chất lượng với các model chuyên biệt",
-        inputs: ["image", "scale", "model"],
-        defaultValues: { scale: "2", model: "standard-v2" },
+        label: "Image Enhancement (Real-ESRGAN)",
+        description:
+            "Tăng độ phân giải 2x/4x với Real-ESRGAN, hỗ trợ bổ trợ khuôn mặt",
+        inputs: ["image", "scale", "faceEnhance", "model"],
+        defaultValues: {
+            scale: "2",
+            faceEnhance: "false",
+            model: "real-esrgan",
+        },
     },
     "ai-beautify": {
         label: "AI Beautify",
@@ -266,9 +271,13 @@ export default function FeatureForm({
         }
 
         if (selectedFeature === "enhance") {
-            const allowed = ["2", "4", "6"];
+            const allowed = ["2", "4"];
             if (formData.scale && !allowed.includes(formData.scale)) {
-                setError("Scale hợp lệ cho enhance: 2x, 4x hoặc 6x.");
+                setError("Scale hợp lệ cho enhance: 2x hoặc 4x.");
+                return false;
+            }
+            if (formData.model && formData.model !== "real-esrgan") {
+                setError("Model hợp lệ cho enhance: real-esrgan.");
                 return false;
             }
         }
@@ -326,6 +335,7 @@ export default function FeatureForm({
 
         const fieldNameMap: Record<string, string> = {
             background: "bg",
+            faceEnhance: "face_enhance",
         };
 
         for (const key of config.inputs) {
@@ -515,7 +525,6 @@ export default function FeatureForm({
                                 <>
                                     <option value="2">2x</option>
                                     <option value="4">4x</option>
-                                    <option value="6">6x</option>
                                 </>
                             ) : selectedFeature === "clarity" ? (
                                 <>
@@ -802,10 +811,10 @@ export default function FeatureForm({
                 {config.inputs.includes("model") && (
                     <div>
                         <label className="block text-sm font-semibold mb-2">
-                            Model
+                            Model (Real-ESRGAN)
                         </label>
                         <select
-                            value={formData.model || "standard-v2"}
+                            value={formData.model || "real-esrgan"}
                             onChange={(e) =>
                                 setFormData({
                                     ...formData,
@@ -814,14 +823,12 @@ export default function FeatureForm({
                             }
                             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         >
-                            <option value="standard-v2">standard-v2</option>
-                            <option value="low-res-v2">low-res-v2</option>
-                            <option value="cgi">cgi</option>
-                            <option value="high-fidelity-v2">
-                                high-fidelity-v2
-                            </option>
-                            <option value="text-refine">text-refine</option>
+                            <option value="real-esrgan">real-esrgan</option>
                         </select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Chỉ hỗ trợ model real-esrgan (giữ tham số vì tương
+                            thích cũ).
+                        </p>
                     </div>
                 )}
 

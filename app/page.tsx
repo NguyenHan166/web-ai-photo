@@ -31,7 +31,7 @@ const FEATURE_TIME: Record<string, string> = {
     upscale: "15-90s",
     clarity: "20-120s",
     "portraits/ic-light": "30-120s",
-    enhance: "30-180s",
+    enhance: "15-60s",
     "ai-beautify": "30-90s",
     "replace-bg": "20-60s",
     style: "30-150s",

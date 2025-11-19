@@ -51,9 +51,9 @@ const FEATURES: Feature[] = [
     {
         id: "enhance",
         name: "Enhance",
-        description: "Professional enhancement",
+        description: "Real-ESRGAN 2x/4x, face enhance option",
         icon: <Zap className="w-5 h-5" />,
-        time: "30-180s",
+        time: "15-60s",
         color: "from-green-500 to-emerald-500",
     },
     {
