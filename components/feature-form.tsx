@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, Sparkles, X } from "lucide-react";
+import { Upload, Sparkles, X, ChevronDown } from "lucide-react";
 
 interface FeatureFormProps {
     selectedFeature: string;
@@ -112,9 +112,11 @@ const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
         },
     },
     "ai-beautify": {
-        label: "AI Beautify",
-        description: "Pipeline 4 bước cho ảnh chân dung",
-        inputs: ["image"],
+        label: "AI Beautify (GFPGAN-based)",
+        description:
+            "Upscale + phục hồi khuôn mặt với Replicate alexgenovese/upscaler (scale 1-10).",
+        inputs: ["image", "scale", "faceEnhance"],
+        defaultValues: { scale: "4", faceEnhance: "true" },
     },
     "replace-bg": {
         label: "Background Replacement",
@@ -282,6 +284,18 @@ export default function FeatureForm({
             }
         }
 
+        if (selectedFeature === "ai-beautify") {
+            const scale = Number(formData.scale ?? config.defaultValues?.scale ?? 4);
+            if (
+                Number.isNaN(scale) ||
+                scale < 1 ||
+                scale > 10
+            ) {
+                setError("Scale hợp lệ cho beautify: 1-10.");
+                return false;
+            }
+        }
+
         if (selectedFeature === "portraits/ic-light") {
             const width = Number(formData.width);
             const height = Number(formData.height);
@@ -401,757 +415,928 @@ export default function FeatureForm({
         config.inputs.includes("image") || config.inputs.includes("fg");
     const bgMode = formData.mode || config.defaultValues?.mode || "replace";
     const showProgress = isProcessing || progress > 0;
+    const inputClass =
+        "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/70 focus:border-primary/60 transition";
+    const selectClass =
+        "w-full appearance-none rounded-xl border border-transparent bg-transparent px-3 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/65 focus:ring-offset-2 focus:ring-offset-background transition";
+    const selectWrapper =
+        "relative rounded-xl border border-white/10 bg-white/5 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.65)] hover:border-primary/50 focus-within:border-primary/60 focus-within:shadow-[0_12px_40px_-18px_rgba(59,130,246,0.55)] transition";
+    const SelectCaret = () => (
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    );
 
     return (
-        <Card className="bg-card border border-border p-6 space-y-6 h-fit sticky top-8">
-            <div className="space-y-1">
-                <h2 className="text-xl font-bold text-balance">
-                    {config.label}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                    {config.description}
-                </p>
+        <Card className="relative h-fit w-full overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-card/90 via-background to-background/90 shadow-2xl">
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -left-12 top-0 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+                <div className="absolute right-[-20%] top-10 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
+                <div className="absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
             </div>
 
-            {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
-                    {error}
-                </div>
-            )}
-
-            {showProgress && (
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">
-                            Đang xử lý
-                        </span>
-                        <span className="text-xs font-medium text-primary">
-                            {Math.round(progress)}%
-                        </span>
+            <div className="relative space-y-6 p-4 sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-1">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                            Control Panel
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-xl font-semibold leading-tight sm:text-2xl">
+                                {config.label}
+                            </h2>
+                            <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/30">
+                                {selectedFeature}
+                            </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            {config.description ||
+                                "Tùy chỉnh tham số và gửi yêu cầu đến máy chủ AI."}
+                        </p>
                     </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-primary via-accent to-primary/70 rounded-full transition-all duration-300"
-                            style={{ width: `${progress}%` }}
-                        ></div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">
+                            Giới hạn tệp 10MB
+                        </span>
+                        <span className="rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">
+                            {isProcessing ? "Đang xử lý" : "Sẵn sàng gửi"}
+                        </span>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="hidden rounded-full border-white/20 bg-white/5 text-xs font-semibold text-foreground shadow-sm hover:border-primary/40 hover:bg-primary/10 sm:inline-flex"
+                            onClick={() => setUseImageUrl(false)}
+                        >
+                            <Sparkles className="mr-2 h-4 w-4 text-primary" />
+                            Làm mới form
+                        </Button>
                     </div>
                 </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {needsImage && (
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-semibold">
-                                {selectedFeature === "replace-bg"
-                                    ? "Foreground Image (fg)"
-                                    : "Upload Image"}
-                            </label>
-                            {selectedFeature === "portraits/ic-light" && (
-                                <button
-                                    type="button"
-                                    onClick={() => setUseImageUrl(!useImageUrl)}
-                                    className="text-xs text-primary hover:underline"
-                                >
-                                    {useImageUrl
-                                        ? "Dùng file upload"
-                                        : "Dùng image_url"}
-                                </button>
+                {error && (
+                    <div className="relative overflow-hidden rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                        <div className="absolute inset-y-0 left-0 w-1 bg-destructive/50" />
+                        {error}
+                    </div>
+                )}
+
+                {showProgress && (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 shadow-inner">
+                        <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                            <span>Trạng thái</span>
+                            <span className="text-primary">
+                                {Math.round(progress)}%
+                            </span>
+                        </div>
+                        <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/10">
+                            <div
+                                className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-primary/80 transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                            {isProcessing
+                                ? "Server đang xử lý yêu cầu của bạn."
+                                : "Đang chuẩn bị gửi..."}
+                        </p>
+                    </div>
+                )}
+
+                <form
+                    onSubmit={handleSubmit}
+                    className="space-y-6 border-t border-white/5 pt-6"
+                >
+                    {needsImage && (
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm sm:p-5">
+                            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="text-sm font-semibold">
+                                        {selectedFeature === "replace-bg"
+                                            ? "Foreground (fg)"
+                                            : "Ảnh nguồn"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Kéo thả hoặc chọn tệp. Hỗ trợ JPG/PNG/
+                                        WebP, tối đa 10MB.
+                                    </p>
+                                </div>
+                                {selectedFeature === "portraits/ic-light" && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setUseImageUrl(!useImageUrl)
+                                        }
+                                        className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-primary transition hover:border-primary/40 hover:bg-primary/10"
+                                    >
+                                        {useImageUrl
+                                            ? "Dùng file upload"
+                                            : "Dùng image_url"}
+                                    </button>
+                                )}
+                            </div>
+
+                            {!useImageUrl && (
+                                <div className="relative">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) =>
+                                            handleImageChange(e, "main")
+                                        }
+                                        className="hidden"
+                                        id="image-upload"
+                                    />
+                                    <label
+                                        htmlFor="image-upload"
+                                        className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 bg-gradient-to-r from-white/5 to-transparent px-4 py-5 text-center transition hover:border-primary/50 hover:bg-primary/5"
+                                    >
+                                        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-primary shadow-inner">
+                                            <Upload className="h-5 w-5" />
+                                        </span>
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-medium text-foreground">
+                                                {hasImage
+                                                    ? "Đã thêm ảnh ✓"
+                                                    : "Chọn ảnh để bắt đầu"}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Click để chọn hoặc kéo thả vào
+                                                đây
+                                            </p>
+                                        </div>
+                                    </label>
+                                </div>
+                            )}
+
+                            {useImageUrl && (
+                                <input
+                                    type="url"
+                                    placeholder="https://example.com/image.jpg"
+                                    value={formData.image_url || ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            image_url: e.target.value,
+                                        })
+                                    }
+                                    className={inputClass}
+                                />
                             )}
                         </div>
+                    )}
 
-                        {!useImageUrl && (
-                            <div className="relative">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                        handleImageChange(e, "main")
-                                    }
-                                    className="hidden"
-                                    id="image-upload"
-                                />
-                                <label
-                                    htmlFor="image-upload"
-                                    className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted transition-colors"
-                                >
-                                    <Upload className="w-5 h-5 text-muted-foreground" />
-                                    <span className="text-sm text-muted-foreground">
-                                        {hasImage
-                                            ? "Image uploaded ✓"
-                                            : "Click to upload (<=10MB)"}
-                                    </span>
+                    {config.inputs.includes("prompt") && (
+                        <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm sm:p-5">
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                <label className="text-sm font-semibold">
+                                    {selectedFeature === "comic/generate"
+                                        ? "Story Prompt"
+                                        : "Lighting Prompt"}
                                 </label>
+                                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                    Càng chi tiết càng tốt
+                                </span>
+                            </div>
+                            <textarea
+                                value={formData.prompt || ""}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        prompt: e.target.value,
+                                    })
+                                }
+                                placeholder={
+                                    selectedFeature === "comic/generate"
+                                        ? "Ví dụ: Một cô gái phát hiện ra cổng thần bí trong khu rừng"
+                                        : "studio soft light, flattering portrait lighting"
+                                }
+                                className={`${inputClass} min-h-[120px] resize-none`}
+                            />
+                        </div>
+                    )}
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {config.inputs.includes("appended_prompt") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Appended Prompt
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.appended_prompt || ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            appended_prompt: e.target.value,
+                                        })
+                                    }
+                                    placeholder="best quality"
+                                    className={inputClass}
+                                />
                             </div>
                         )}
 
-                        {useImageUrl && (
-                            <input
-                                type="url"
-                                placeholder="https://example.com/image.jpg"
-                                value={formData.image_url || ""}
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        image_url: e.target.value,
-                                    })
-                                }
-                                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
+                        {config.inputs.includes("negative_prompt") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Negative Prompt
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.negative_prompt || ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            negative_prompt: e.target.value,
+                                        })
+                                    }
+                                    placeholder="lowres, bad anatomy, bad hands..."
+                                    className={inputClass}
+                                />
+                            </div>
+                        )}
+
+                        {config.inputs.includes("scale") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Scale
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={
+                                            formData.scale ||
+                                            config.defaultValues?.scale ||
+                                            "2"
+                                        }
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                scale: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        {selectedFeature === "enhance" ||
+                                        selectedFeature === "clarity" ? (
+                                            <>
+                                                <option value="2">2x</option>
+                                                <option value="4">4x</option>
+                                            </>
+                                        ) : selectedFeature === "ai-beautify" ? (
+                                            Array.from({ length: 10 }).map(
+                                                (_, idx) => (
+                                                    <option
+                                                        key={idx + 1}
+                                                        value={idx + 1}
+                                                    >
+                                                        {idx + 1}x
+                                                    </option>
+                                                )
+                                            )
+                                        ) : (
+                                            <>
+                                                <option value="1">1x</option>
+                                                <option value="2">2x</option>
+                                                <option value="4">4x</option>
+                                            </>
+                                        )}
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("version") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Model Version
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.version || "v1.4"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                version: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="v1.3">v1.3</option>
+                                        <option value="v1.4">v1.4</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("light_source") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Light Source
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.light_source || "None"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                light_source: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="None">None</option>
+                                        <option value="Left Light">
+                                            Left Light
+                                        </option>
+                                        <option value="Right Light">
+                                            Right Light
+                                        </option>
+                                        <option value="Top Light">
+                                            Top Light
+                                        </option>
+                                        <option value="Bottom Light">
+                                            Bottom Light
+                                        </option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("steps") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Steps (1-100)
+                                </label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={100}
+                                    value={formData.steps || "25"}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            steps: e.target.value,
+                                        })
+                                    }
+                                    className={inputClass}
+                                />
+                            </div>
+                        )}
+
+                        {config.inputs.includes("cfg") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Guidance (1-32)
+                                </label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={32}
+                                    value={formData.cfg || "2"}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            cfg: e.target.value,
+                                        })
+                                    }
+                                    className={inputClass}
+                                />
+                            </div>
+                        )}
+
+                        {config.inputs.includes("width") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Output Width (256-1024, step 64)
+                                </label>
+                                <input
+                                    type="number"
+                                    min={256}
+                                    max={1024}
+                                    step={64}
+                                    value={formData.width || ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            width: e.target.value,
+                                        })
+                                    }
+                                    className={inputClass}
+                                />
+                            </div>
+                        )}
+
+                        {config.inputs.includes("height") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Output Height (256-1024, step 64)
+                                </label>
+                                <input
+                                    type="number"
+                                    min={256}
+                                    max={1024}
+                                    step={64}
+                                    value={formData.height || ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            height: e.target.value,
+                                        })
+                                    }
+                                    className={inputClass}
+                                />
+                            </div>
+                        )}
+
+                        {config.inputs.includes("number_of_images") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Số ảnh (1-12)
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.number_of_images || "1"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                number_of_images:
+                                                    e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        {Array.from({ length: 12 }).map(
+                                            (_, idx) => (
+                                                <option
+                                                    key={idx + 1}
+                                                    value={idx + 1}
+                                                >
+                                                    {idx + 1}
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("panels") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Number of Panels
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.panels || "4"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                panels: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("output_format") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Output Format
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.output_format || "webp"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                output_format: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="webp">webp</option>
+                                        <option value="jpg">jpg</option>
+                                        <option value="png">png</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("model") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Model (Real-ESRGAN)
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.model || "real-esrgan"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                model: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="real-esrgan">
+                                            real-esrgan
+                                        </option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Giữ tham số để tương thích với API cũ.
+                                </p>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("style") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    {selectedFeature === "style"
+                                        ? "Artistic Style"
+                                        : "Comic Style"}
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={
+                                            formData.style ||
+                                            config.defaultValues?.style ||
+                                            "anime"
+                                        }
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                style: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        {selectedFeature === "style" ? (
+                                            <>
+                                                <option value="anime">
+                                                    anime
+                                                </option>
+                                                <option value="ghibli">
+                                                    ghibli
+                                                </option>
+                                                <option value="watercolor">
+                                                    watercolor
+                                                </option>
+                                                <option value="oil-painting">
+                                                    oil-painting
+                                                </option>
+                                                <option value="sketches">
+                                                    sketches
+                                                </option>
+                                                <option value="cartoon">
+                                                    cartoon
+                                                </option>
+                                            </>
+                                        ) : (
+                                            <option value="anime_color">
+                                                anime_color
+                                            </option>
+                                        )}
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("extra") && (
+                            <div className="space-y-2 sm:col-span-2">
+                                <label className="text-sm font-semibold">
+                                    Extra Description (optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.extra || ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            extra: e.target.value,
+                                        })
+                                    }
+                                    placeholder='Ví dụ: "add sunset background"'
+                                    className={inputClass}
+                                />
+                            </div>
                         )}
                     </div>
-                )}
 
-                {config.inputs.includes("scale") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Scale
-                        </label>
-                        <select
-                            value={
-                                formData.scale ||
-                                config.defaultValues?.scale ||
-                                "2"
-                            }
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    scale: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            {selectedFeature === "enhance" ? (
-                                <>
-                                    <option value="2">2x</option>
-                                    <option value="4">4x</option>
-                                </>
-                            ) : selectedFeature === "clarity" ? (
-                                <>
-                                    <option value="2">2x</option>
-                                    <option value="4">4x</option>
-                                </>
-                            ) : (
-                                <>
-                                    <option value="1">1x</option>
-                                    <option value="2">2x</option>
-                                    <option value="4">4x</option>
-                                </>
-                            )}
-                        </select>
-                    </div>
-                )}
-
-                {config.inputs.includes("version") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Model Version
-                        </label>
-                        <select
-                            value={formData.version || "v1.4"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    version: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="v1.3">v1.3</option>
-                            <option value="v1.4">v1.4</option>
-                        </select>
-                    </div>
-                )}
-
-                {config.inputs.includes("prompt") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            {selectedFeature === "comic/generate"
-                                ? "Story Prompt"
-                                : "Lighting Prompt"}
-                        </label>
-                        <textarea
-                            value={formData.prompt || ""}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    prompt: e.target.value,
-                                })
-                            }
-                            placeholder={
-                                selectedFeature === "comic/generate"
-                                    ? "Ví dụ: Một cô gái phát hiện ra cổng thần bí trong khu rừng"
-                                    : "studio soft light, flattering portrait lighting"
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none h-24"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("appended_prompt") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Appended Prompt
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.appended_prompt || ""}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    appended_prompt: e.target.value,
-                                })
-                            }
-                            placeholder="best quality"
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("negative_prompt") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Negative Prompt
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.negative_prompt || ""}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    negative_prompt: e.target.value,
-                                })
-                            }
-                            placeholder="lowres, bad anatomy, bad hands..."
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("light_source") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Light Source
-                        </label>
-                        <select
-                            value={formData.light_source || "None"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    light_source: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="None">None</option>
-                            <option value="Left Light">Left Light</option>
-                            <option value="Right Light">Right Light</option>
-                            <option value="Top Light">Top Light</option>
-                            <option value="Bottom Light">Bottom Light</option>
-                        </select>
-                    </div>
-                )}
-
-                {config.inputs.includes("steps") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Steps (1-100)
-                        </label>
-                        <input
-                            type="number"
-                            min={1}
-                            max={100}
-                            value={formData.steps || "25"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    steps: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("cfg") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Guidance (1-32)
-                        </label>
-                        <input
-                            type="number"
-                            min={1}
-                            max={32}
-                            value={formData.cfg || "2"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    cfg: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("width") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Output Width (256-1024, step 64)
-                        </label>
-                        <input
-                            type="number"
-                            min={256}
-                            max={1024}
-                            step={64}
-                            value={formData.width || ""}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    width: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("height") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Output Height (256-1024, step 64)
-                        </label>
-                        <input
-                            type="number"
-                            min={256}
-                            max={1024}
-                            step={64}
-                            value={formData.height || ""}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    height: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("number_of_images") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Number of Images (1-12)
-                        </label>
-                        <select
-                            value={formData.number_of_images || "1"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    number_of_images: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            {Array.from({ length: 12 }).map((_, idx) => (
-                                <option key={idx + 1} value={idx + 1}>
-                                    {idx + 1}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                )}
-
-                {config.inputs.includes("output_format") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Output Format
-                        </label>
-                        <select
-                            value={formData.output_format || "webp"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    output_format: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="webp">webp</option>
-                            <option value="jpg">jpg</option>
-                            <option value="png">png</option>
-                        </select>
-                    </div>
-                )}
-
-                {config.inputs.includes("output_quality") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Output Quality (1-100)
-                        </label>
-                        <input
-                            type="range"
-                            min={1}
-                            max={100}
-                            value={formData.output_quality || "80"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    output_quality: e.target.value,
-                                })
-                            }
-                            className="w-full"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            {formData.output_quality || "80"}
-                        </p>
-                    </div>
-                )}
-
-                {config.inputs.includes("model") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Model (Real-ESRGAN)
-                        </label>
-                        <select
-                            value={formData.model || "real-esrgan"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    model: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="real-esrgan">real-esrgan</option>
-                        </select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Chỉ hỗ trợ model real-esrgan (giữ tham số vì tương
-                            thích cũ).
-                        </p>
-                    </div>
-                )}
-
-                {config.inputs.includes("style") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            {selectedFeature === "style"
-                                ? "Artistic Style"
-                                : "Comic Style"}
-                        </label>
-                        <select
-                            value={
-                                formData.style ||
-                                config.defaultValues?.style ||
-                                "anime"
-                            }
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    style: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            {selectedFeature === "style" ? (
-                                <>
-                                    <option value="anime">anime</option>
-                                    <option value="ghibli">ghibli</option>
-                                    <option value="watercolor">
-                                        watercolor
-                                    </option>
-                                    <option value="oil-painting">
-                                        oil-painting
-                                    </option>
-                                    <option value="sketches">sketches</option>
-                                    <option value="cartoon">cartoon</option>
-                                </>
-                            ) : (
-                                <option value="anime_color">anime_color</option>
-                            )}
-                        </select>
-                    </div>
-                )}
-
-                {config.inputs.includes("extra") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Extra Description (optional)
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.extra || ""}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    extra: e.target.value,
-                                })
-                            }
-                            placeholder='Ví dụ: "add sunset background"'
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("mode") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-3">
-                            Background Mode
-                        </label>
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setFormData({ ...formData, mode: "remove" })
-                                }
-                                className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                                    bgMode !== "replace"
-                                        ? "bg-primary text-white"
-                                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                }`}
-                            >
-                                Remove
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setFormData({
-                                        ...formData,
-                                        mode: "replace",
-                                    })
-                                }
-                                className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all ${
-                                    bgMode === "replace"
-                                        ? "bg-primary text-white"
-                                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                }`}
-                            >
-                                Replace
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {config.inputs.includes("bg") && bgMode === "replace" && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-3">
-                            Background Image (bg)
-                        </label>
-                        <div className="relative">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) =>
-                                    handleImageChange(e, "background")
-                                }
-                                className="hidden"
-                                id="background-upload"
-                            />
-                            <label
-                                htmlFor="background-upload"
-                                className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted transition-colors"
-                            >
-                                <Upload className="w-5 h-5 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">
-                                    {backgroundImage
-                                        ? "Background uploaded ✓"
-                                        : "Upload background (<=10MB)"}
+                    {config.inputs.includes("output_quality") && (
+                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 shadow-sm sm:px-5">
+                            <div className="flex items-center justify-between text-sm font-semibold">
+                                <span>Output Quality</span>
+                                <span className="text-primary">
+                                    {formData.output_quality || "80"}
                                 </span>
-                            </label>
+                            </div>
+                            <input
+                                type="range"
+                                min={1}
+                                max={100}
+                                value={formData.output_quality || "80"}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        output_quality: e.target.value,
+                                    })
+                                }
+                                className="mt-2 w-full accent-primary"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Chọn 80-90 để cân bằng chất lượng và dung lượng.
+                            </p>
                         </div>
-                        {backgroundImage && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setBackgroundImage(null);
-                                    setBackgroundFile(null);
-                                }}
-                                className="mt-2 w-full flex items-center justify-center gap-2 py-2 px-3 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                            >
-                                <X className="w-4 h-4" />
-                                Remove Background
-                            </button>
+                    )}
+
+                    {(config.inputs.includes("mode") ||
+                        config.inputs.includes("bg")) && (
+                        <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm sm:p-5">
+                            {config.inputs.includes("mode") && (
+                                <div>
+                                    <p className="mb-3 text-sm font-semibold">
+                                        Background Mode
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setFormData({
+                                                    ...formData,
+                                                    mode: "remove",
+                                                })
+                                            }
+                                            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                                                bgMode !== "replace"
+                                                    ? "border-primary/50 bg-primary/15 text-primary"
+                                                    : "border-white/10 bg-white/5 text-muted-foreground hover:border-white/30"
+                                            }`}
+                                        >
+                                            Remove
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setFormData({
+                                                    ...formData,
+                                                    mode: "replace",
+                                                })
+                                            }
+                                            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                                                bgMode === "replace"
+                                                    ? "border-primary/50 bg-primary/15 text-primary"
+                                                    : "border-white/10 bg-white/5 text-muted-foreground hover:border-white/30"
+                                            }`}
+                                        >
+                                            Replace
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {config.inputs.includes("bg") &&
+                                bgMode === "replace" && (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold">
+                                            Background Image (bg)
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) =>
+                                                    handleImageChange(
+                                                        e,
+                                                        "background"
+                                                    )
+                                                }
+                                                className="hidden"
+                                                id="background-upload"
+                                            />
+                                            <label
+                                                htmlFor="background-upload"
+                                                className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-gradient-to-r from-white/5 to-transparent px-4 py-4 text-center transition hover:border-primary/50 hover:bg-primary/5"
+                                            >
+                                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-primary shadow-inner">
+                                                    <Upload className="h-4 w-4" />
+                                                </span>
+                                                <span className="text-sm text-foreground">
+                                                    {backgroundImage
+                                                        ? "Background uploaded ✓"
+                                                        : "Upload background (<=10MB)"}
+                                                </span>
+                                            </label>
+                                        </div>
+                                        {backgroundImage && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setBackgroundImage(null);
+                                                    setBackgroundFile(null);
+                                                }}
+                                                className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive transition hover:border-destructive/60"
+                                            >
+                                                <X className="h-4 w-4" />
+                                                Remove Background
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                        </div>
+                    )}
+
+                    {(config.inputs.includes("fit") ||
+                        config.inputs.includes("position") ||
+                        config.inputs.includes("featherPx") ||
+                        config.inputs.includes("shadow") ||
+                        config.inputs.includes("signTtl")) && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {config.inputs.includes("fit") && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold">
+                                        Fit
+                                    </label>
+                                    <div className={selectWrapper}>
+                                        <select
+                                            value={formData.fit || "cover"}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                fit: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="cover">cover</option>
+                                        <option value="contain">contain</option>
+                                        <option value="fill">fill</option>
+                                        <option value="inside">inside</option>
+                                        <option value="outside">outside</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
                         )}
-                    </div>
-                )}
 
-                {config.inputs.includes("fit") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Fit
-                        </label>
-                        <select
-                            value={formData.fit || "cover"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    fit: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="cover">cover</option>
-                            <option value="contain">contain</option>
-                            <option value="fill">fill</option>
-                            <option value="inside">inside</option>
-                            <option value="outside">outside</option>
-                        </select>
-                    </div>
-                )}
+                            {config.inputs.includes("position") && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold">
+                                        Position
+                                    </label>
+                                    <div className={selectWrapper}>
+                                        <select
+                                            value={formData.position || "centre"}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                position: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="centre">centre</option>
+                                        <option value="top">top</option>
+                                        <option value="bottom">bottom</option>
+                                        <option value="left">left</option>
+                                        <option value="right">right</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
 
-                {config.inputs.includes("position") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Position
-                        </label>
-                        <select
-                            value={formData.position || "centre"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    position: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="centre">centre</option>
-                            <option value="top">top</option>
-                            <option value="bottom">bottom</option>
-                            <option value="left">left</option>
-                            <option value="right">right</option>
-                        </select>
-                    </div>
-                )}
+                            {config.inputs.includes("featherPx") && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold">
+                                        Feather (0-20 px)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={20}
+                                        value={formData.featherPx || "1"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                featherPx: e.target.value,
+                                            })
+                                        }
+                                        className={inputClass}
+                                    />
+                                </div>
+                            )}
 
-                {config.inputs.includes("featherPx") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Feather (0-20 px)
-                        </label>
-                        <input
-                            type="number"
-                            min={0}
-                            max={20}
-                            value={formData.featherPx || "1"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    featherPx: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
+                            {config.inputs.includes("shadow") && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold">
+                                        Shadow
+                                    </label>
+                                    <div className={selectWrapper}>
+                                        <select
+                                            value={formData.shadow || "1"}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                shadow: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="1">Có</option>
+                                        <option value="0">Không</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
 
-                {config.inputs.includes("shadow") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Shadow
-                        </label>
-                        <select
-                            value={formData.shadow || "1"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    shadow: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="1">Có</option>
-                            <option value="0">Không</option>
-                        </select>
-                    </div>
-                )}
+                            {config.inputs.includes("signTtl") && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold">
+                                        Presigned TTL (60-86400s)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={60}
+                                        max={86400}
+                                        value={formData.signTtl || "3600"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                signTtl: e.target.value,
+                                            })
+                                        }
+                                        className={inputClass}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                {config.inputs.includes("signTtl") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Presigned TTL (60-86400s)
-                        </label>
-                        <input
-                            type="number"
-                            min={60}
-                            max={86400}
-                            value={formData.signTtl || "3600"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    signTtl: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                    </div>
-                )}
-
-                {config.inputs.includes("faceEnhance") && (
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            id="faceEnhance"
-                            checked={formData.faceEnhance === "true"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    faceEnhance: e.target.checked
-                                        ? "true"
-                                        : "false",
-                                })
-                            }
-                            className="w-4 h-4"
-                        />
+                    {config.inputs.includes("faceEnhance") && (
                         <label
                             htmlFor="faceEnhance"
-                            className="text-sm font-semibold"
+                            className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 shadow-sm"
                         >
-                            Enhance faces
+                            <div className="space-y-1">
+                                <p className="text-sm font-semibold">
+                                    Enhance faces
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Bật Real-ESRGAN hỗ trợ khuôn mặt.
+                                </p>
+                            </div>
+                            <input
+                                type="checkbox"
+                                id="faceEnhance"
+                                checked={formData.faceEnhance === "true"}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        faceEnhance: e.target.checked
+                                            ? "true"
+                                            : "false",
+                                    })
+                                }
+                                className="h-5 w-5 rounded border border-white/30 bg-background text-primary focus:ring-2 focus:ring-primary/60"
+                            />
                         </label>
-                    </div>
-                )}
+                    )}
 
-                {config.inputs.includes("panels") && (
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">
-                            Number of Panels
-                        </label>
-                        <select
-                            value={formData.panels || "4"}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    panels: e.target.value,
-                                })
-                            }
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                        </select>
-                    </div>
-                )}
-
-                <Button
-                    type="submit"
-                    disabled={
-                        isProcessing ||
-                        (!isProcessing &&
-                            needsImage &&
-                            !useImageUrl &&
-                            !imageFile &&
-                            selectedFeature !== "comic/generate")
-                    }
-                    className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 disabled:opacity-50"
-                >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {isProcessing ? "Processing..." : "Process"}
-                </Button>
-            </form>
+                    <Button
+                        type="submit"
+                        disabled={
+                            isProcessing ||
+                            (!isProcessing &&
+                                needsImage &&
+                                !useImageUrl &&
+                                !imageFile &&
+                                selectedFeature !== "comic/generate")
+                        }
+                        className="w-full rounded-2xl bg-gradient-to-r from-primary via-accent to-primary/80 text-base font-semibold shadow-lg transition hover:brightness-110 disabled:opacity-50"
+                    >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        {isProcessing ? "Processing..." : "Gửi đến AI"}
+                    </Button>
+                </form>
+            </div>
         </Card>
     );
 }
