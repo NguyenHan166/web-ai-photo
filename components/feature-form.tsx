@@ -54,6 +54,7 @@ const FEATURE_ENDPOINTS: Record<string, string> = {
     "replace-bg": "/replace-bg",
     style: "/style/replace-style",
     "comic/generate": "/comic/generate",
+    "story-comic": "/story-comic/generate",
 };
 
 const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
@@ -152,6 +153,13 @@ const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
         inputs: ["prompt", "panels", "style"],
         defaultValues: { panels: "4", style: "anime_color" },
     },
+    "story-comic": {
+        label: "Story Comic (Multi-page)",
+        description:
+            "Tạo truyện tranh anime màu nhiều trang với thoại tiếng Việt",
+        inputs: ["prompt", "pages", "panels_per_page"],
+        defaultValues: { pages: "3", panels_per_page: "4" },
+    },
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -225,6 +233,7 @@ export default function FeatureForm({
 
         if (
             selectedFeature !== "comic/generate" &&
+            selectedFeature !== "story-comic" &&
             selectedFeature !== "portraits/ic-light" &&
             config.inputs.includes("image") &&
             !imageFile
@@ -257,10 +266,11 @@ export default function FeatureForm({
         }
 
         if (
-            selectedFeature === "comic/generate" &&
-            (!formData.prompt || formData.prompt.trim().length < 5)
+            (selectedFeature === "comic/generate" ||
+                selectedFeature === "story-comic") &&
+            (!formData.prompt || formData.prompt.trim().length < 8)
         ) {
-            setError("Prompt tối thiểu 5 ký tự.");
+            setError("Prompt tối thiểu 8 ký tự.");
             return false;
         }
 
@@ -285,12 +295,10 @@ export default function FeatureForm({
         }
 
         if (selectedFeature === "ai-beautify") {
-            const scale = Number(formData.scale ?? config.defaultValues?.scale ?? 4);
-            if (
-                Number.isNaN(scale) ||
-                scale < 1 ||
-                scale > 10
-            ) {
+            const scale = Number(
+                formData.scale ?? config.defaultValues?.scale ?? 4
+            );
+            if (Number.isNaN(scale) || scale < 1 || scale > 10) {
                 setError("Scale hợp lệ cho beautify: 1-10.");
                 return false;
             }
@@ -588,12 +596,15 @@ export default function FeatureForm({
                         <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm sm:p-5">
                             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                                 <label className="text-sm font-semibold">
-                                    {selectedFeature === "comic/generate"
+                                    {selectedFeature === "comic/generate" ||
+                                    selectedFeature === "story-comic"
                                         ? "Story Prompt"
                                         : "Lighting Prompt"}
                                 </label>
                                 <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    Càng chi tiết càng tốt
+                                    {selectedFeature === "story-comic"
+                                        ? "≥ 8 ký tự"
+                                        : "Càng chi tiết càng tốt"}
                                 </span>
                             </div>
                             <textarea
@@ -605,7 +616,9 @@ export default function FeatureForm({
                                     })
                                 }
                                 placeholder={
-                                    selectedFeature === "comic/generate"
+                                    selectedFeature === "story-comic"
+                                        ? "Ví dụ: Một nữ sinh nhút nhát gặp mèo phép thuật trong đêm mưa ở Tokyo."
+                                        : selectedFeature === "comic/generate"
                                         ? "Ví dụ: Một cô gái phát hiện ra cổng thần bí trong khu rừng"
                                         : "studio soft light, flattering portrait lighting"
                                 }
@@ -681,7 +694,8 @@ export default function FeatureForm({
                                                 <option value="2">2x</option>
                                                 <option value="4">4x</option>
                                             </>
-                                        ) : selectedFeature === "ai-beautify" ? (
+                                        ) : selectedFeature ===
+                                          "ai-beautify" ? (
                                             Array.from({ length: 10 }).map(
                                                 (_, idx) => (
                                                     <option
@@ -905,6 +919,54 @@ export default function FeatureForm({
                                         <option value="4">4</option>
                                         <option value="5">5</option>
                                         <option value="6">6</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("pages") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Number of Pages
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.pages || "3"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                pages: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="2">2 pages</option>
+                                        <option value="3">3 pages</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("panels_per_page") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Panels per Page
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.panels_per_page || "4"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                panels_per_page: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="3">3 panels</option>
+                                        <option value="4">4 panels</option>
                                     </select>
                                     <SelectCaret />
                                 </div>
@@ -1179,21 +1241,27 @@ export default function FeatureForm({
                                             onChange={(e) =>
                                                 setFormData({
                                                     ...formData,
-                                                fit: e.target.value,
-                                            })
-                                        }
-                                        className={selectClass}
-                                    >
-                                        <option value="cover">cover</option>
-                                        <option value="contain">contain</option>
-                                        <option value="fill">fill</option>
-                                        <option value="inside">inside</option>
-                                        <option value="outside">outside</option>
-                                    </select>
-                                    <SelectCaret />
+                                                    fit: e.target.value,
+                                                })
+                                            }
+                                            className={selectClass}
+                                        >
+                                            <option value="cover">cover</option>
+                                            <option value="contain">
+                                                contain
+                                            </option>
+                                            <option value="fill">fill</option>
+                                            <option value="inside">
+                                                inside
+                                            </option>
+                                            <option value="outside">
+                                                outside
+                                            </option>
+                                        </select>
+                                        <SelectCaret />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
                             {config.inputs.includes("position") && (
                                 <div className="space-y-2">
@@ -1202,25 +1270,31 @@ export default function FeatureForm({
                                     </label>
                                     <div className={selectWrapper}>
                                         <select
-                                            value={formData.position || "centre"}
+                                            value={
+                                                formData.position || "centre"
+                                            }
                                             onChange={(e) =>
                                                 setFormData({
                                                     ...formData,
-                                                position: e.target.value,
-                                            })
-                                        }
-                                        className={selectClass}
-                                    >
-                                        <option value="centre">centre</option>
-                                        <option value="top">top</option>
-                                        <option value="bottom">bottom</option>
-                                        <option value="left">left</option>
-                                        <option value="right">right</option>
-                                    </select>
-                                    <SelectCaret />
+                                                    position: e.target.value,
+                                                })
+                                            }
+                                            className={selectClass}
+                                        >
+                                            <option value="centre">
+                                                centre
+                                            </option>
+                                            <option value="top">top</option>
+                                            <option value="bottom">
+                                                bottom
+                                            </option>
+                                            <option value="left">left</option>
+                                            <option value="right">right</option>
+                                        </select>
+                                        <SelectCaret />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
                             {config.inputs.includes("featherPx") && (
                                 <div className="space-y-2">
@@ -1254,18 +1328,18 @@ export default function FeatureForm({
                                             onChange={(e) =>
                                                 setFormData({
                                                     ...formData,
-                                                shadow: e.target.value,
-                                            })
-                                        }
-                                        className={selectClass}
-                                    >
-                                        <option value="1">Có</option>
-                                        <option value="0">Không</option>
-                                    </select>
-                                    <SelectCaret />
+                                                    shadow: e.target.value,
+                                                })
+                                            }
+                                            className={selectClass}
+                                        >
+                                            <option value="1">Có</option>
+                                            <option value="0">Không</option>
+                                        </select>
+                                        <SelectCaret />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
                             {config.inputs.includes("signTtl") && (
                                 <div className="space-y-2">
@@ -1328,7 +1402,8 @@ export default function FeatureForm({
                                 needsImage &&
                                 !useImageUrl &&
                                 !imageFile &&
-                                selectedFeature !== "comic/generate")
+                                selectedFeature !== "comic/generate" &&
+                                selectedFeature !== "story-comic")
                         }
                         className="w-full rounded-2xl bg-gradient-to-r from-primary via-accent to-primary/80 text-base font-semibold shadow-lg transition hover:brightness-110 disabled:opacity-50"
                     >
