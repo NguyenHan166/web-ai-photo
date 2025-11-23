@@ -273,6 +273,7 @@ export default function Home() {
 
                             {/* Feature Form */}
                             <FeatureForm
+                                key={selectedFeature}
                                 selectedFeature={selectedFeature}
                                 onImageUpload={setUploadedImage}
                                 onProcess={handleProcess}

@@ -211,6 +211,7 @@ export default function FeatureForm({
 
         if (file.size > MAX_FILE_SIZE) {
             setError("File phải nhỏ hơn 10MB theo yêu cầu API.");
+            e.target.value = ""; // Reset input
             return;
         }
 
@@ -224,6 +225,8 @@ export default function FeatureForm({
                 onImageUpload(url);
                 setImageFile(file);
             }
+            // Reset input để cho phép upload lại cùng file
+            e.target.value = "";
         };
         reader.readAsDataURL(file);
     };
