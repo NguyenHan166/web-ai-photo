@@ -113,11 +113,11 @@ const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
         },
     },
     "ai-beautify": {
-        label: "AI Beautify (GFPGAN-based)",
+        label: "AI Beautify (Real-ESRGAN)",
         description:
-            "Upscale + phục hồi khuôn mặt với Replicate alexgenovese/upscaler (scale 1-10).",
-        inputs: ["image", "scale", "faceEnhance"],
-        defaultValues: { scale: "4", faceEnhance: "true" },
+            "Image super-resolution với Real-ESRGAN model (scale 2-4).",
+        inputs: ["image", "scale"],
+        defaultValues: { scale: "2" },
     },
     "replace-bg": {
         label: "Background Replacement",
@@ -296,10 +296,10 @@ export default function FeatureForm({
 
         if (selectedFeature === "ai-beautify") {
             const scale = Number(
-                formData.scale ?? config.defaultValues?.scale ?? 4
+                formData.scale ?? config.defaultValues?.scale ?? 2
             );
-            if (Number.isNaN(scale) || scale < 1 || scale > 10) {
-                setError("Scale hợp lệ cho beautify: 1-10.");
+            if (Number.isNaN(scale) || scale < 2 || scale > 8) {
+                setError("Scale hợp lệ cho beautify: 2-4-8.");
                 return false;
             }
         }
@@ -696,16 +696,11 @@ export default function FeatureForm({
                                             </>
                                         ) : selectedFeature ===
                                           "ai-beautify" ? (
-                                            Array.from({ length: 10 }).map(
-                                                (_, idx) => (
-                                                    <option
-                                                        key={idx + 1}
-                                                        value={idx + 1}
-                                                    >
-                                                        {idx + 1}x
-                                                    </option>
-                                                )
-                                            )
+                                            <>
+                                                <option value="2">2x</option>
+                                                <option value="4">4x</option>
+                                                <option value="8">8x</option>
+                                            </>
                                         ) : (
                                             <>
                                                 <option value="1">1x</option>
