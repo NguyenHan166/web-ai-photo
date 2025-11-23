@@ -126,52 +126,51 @@ export default function Home() {
     };
 
     const downloadImage = async (url: string, index: number) => {
+        const featureName = selectedFeature.replace(/[/-]/g, "_");
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const filename = `${featureName}_${timestamp}_${index + 1}.jpg`;
+
         try {
-            // Tải ảnh về trước
-            const response = await fetch(url, { mode: "cors" });
+            // Thử fetch ảnh để tải về dưới dạng blob
+            const response = await fetch(url);
+
             if (!response.ok) {
-                throw new Error(
-                    `Failed to fetch image: ${response.statusText}`
-                );
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
-            const featureName = selectedFeature.replace(/[/-]/g, "_");
-            const timestamp = new Date().toISOString().slice(0, 10);
 
-            // Tạo link download
+            // Tạo link download và trigger download
             const downloadLink = document.createElement("a");
             downloadLink.href = blobUrl;
-            downloadLink.download = `${featureName}_${timestamp}_${
-                index + 1
-            }.jpg`;
+            downloadLink.download = filename;
+            downloadLink.style.display = "none";
             document.body.appendChild(downloadLink);
             downloadLink.click();
-            document.body.removeChild(downloadLink);
 
-            // Mở ảnh trong tab mới sau khi download
+            // Cleanup
             setTimeout(() => {
-                window.open(url, "_blank", "noopener,noreferrer");
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(blobUrl);
             }, 100);
 
-            // Cleanup blob URL sau 2 giây
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+            console.log("[Client] Download started:", filename);
         } catch (error) {
-            console.error("[Client] Download error:", error);
-            // Fallback: sử dụng link trực tiếp
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `processed-image-${index + 1}.jpg`;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            console.error("[Client] Fetch failed, using fallback:", error);
 
-            // Vẫn mở tab mới
+            // Fallback: Sử dụng link trực tiếp với download attribute
+            const downloadLink = document.createElement("a");
+            downloadLink.href = url;
+            downloadLink.download = filename;
+            downloadLink.target = "_blank";
+            downloadLink.rel = "noopener noreferrer";
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+
             setTimeout(() => {
-                window.open(url, "_blank", "noopener,noreferrer");
+                document.body.removeChild(downloadLink);
             }, 100);
         }
     };
