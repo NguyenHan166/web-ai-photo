@@ -1173,49 +1173,83 @@ export default function FeatureForm({
 
                             {config.inputs.includes("bg") &&
                                 bgMode === "replace" && (
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         <label className="text-sm font-semibold">
                                             Background Image (bg)
                                         </label>
-                                        <div className="relative">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) =>
-                                                    handleImageChange(
-                                                        e,
-                                                        "background"
-                                                    )
-                                                }
-                                                className="hidden"
-                                                id="background-upload"
-                                            />
-                                            <label
-                                                htmlFor="background-upload"
-                                                className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-gradient-to-r from-white/5 to-transparent px-4 py-4 text-center transition hover:border-primary/50 hover:bg-primary/5"
-                                            >
-                                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-primary shadow-inner">
-                                                    <Upload className="h-4 w-4" />
-                                                </span>
-                                                <span className="text-sm text-foreground">
-                                                    {backgroundImage
-                                                        ? "Background uploaded ✓"
-                                                        : "Upload background (<=10MB)"}
-                                                </span>
-                                            </label>
-                                        </div>
-                                        {backgroundImage && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setBackgroundImage(null);
-                                                    setBackgroundFile(null);
-                                                }}
-                                                className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive transition hover:border-destructive/60"
-                                            >
-                                                <X className="h-4 w-4" />
-                                                Remove Background
-                                            </button>
+
+                                        {!backgroundImage ? (
+                                            <div className="relative">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) =>
+                                                        handleImageChange(
+                                                            e,
+                                                            "background"
+                                                        )
+                                                    }
+                                                    className="hidden"
+                                                    id="background-upload"
+                                                />
+                                                <label
+                                                    htmlFor="background-upload"
+                                                    className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-gradient-to-r from-white/5 to-transparent px-4 py-4 text-center transition hover:border-primary/50 hover:bg-primary/5"
+                                                >
+                                                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-primary shadow-inner">
+                                                        <Upload className="h-4 w-4" />
+                                                    </span>
+                                                    <span className="text-sm text-foreground">
+                                                        Upload background
+                                                        (&lt;=10MB)
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <div className="relative overflow-hidden rounded-xl border-2 border-accent/30 bg-card shadow-md">
+                                                    <img
+                                                        src={backgroundImage}
+                                                        alt="Background preview"
+                                                        className="h-48 w-full object-cover"
+                                                    />
+                                                    <div className="absolute right-2 top-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setBackgroundImage(
+                                                                    null
+                                                                );
+                                                                setBackgroundFile(
+                                                                    null
+                                                                );
+                                                            }}
+                                                            className="flex h-8 w-8 items-center justify-center rounded-full border border-destructive/50 bg-destructive/90 text-white shadow-lg transition hover:bg-destructive"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2">
+                                                        <p className="text-xs font-semibold text-white">
+                                                            Background ảnh đã
+                                                            chọn ✓
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setBackgroundImage(
+                                                            null
+                                                        );
+                                                        setBackgroundFile(null);
+                                                    }}
+                                                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive transition hover:border-destructive/60"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                    Remove & Choose Another
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 )}
