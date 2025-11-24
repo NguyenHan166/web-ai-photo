@@ -131,8 +131,18 @@ export default function Home() {
         const filename = `${featureName}_${timestamp}_${index + 1}.jpg`;
 
         try {
-            // Thử fetch ảnh để tải về dưới dạng blob
-            const response = await fetch(url);
+            console.log("[Client] Starting download for:", url);
+
+            // Thêm timestamp vào URL để tránh cache browser gây lỗi CORS
+            const fetchUrl = `${url}?t=${new Date().getTime()}`;
+
+            const response = await fetch(fetchUrl, {
+                headers: new Headers({
+                    Origin: location.origin,
+                }),
+                mode: "cors", // Bắt buộc báo hiệu request CORS
+                cache: "no-cache", // Không dùng cache cũ
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -141,37 +151,21 @@ export default function Home() {
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
 
-            // Tạo link download và trigger download
+            // Tạo link download từ Blob (Lúc này là same-origin nên thuộc tính download sẽ hoạt động)
             const downloadLink = document.createElement("a");
             downloadLink.href = blobUrl;
             downloadLink.download = filename;
-            downloadLink.style.display = "none";
             document.body.appendChild(downloadLink);
             downloadLink.click();
 
             // Cleanup
-            setTimeout(() => {
-                document.body.removeChild(downloadLink);
-                URL.revokeObjectURL(blobUrl);
-            }, 100);
-
-            console.log("[Client] Download started:", filename);
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(blobUrl);
         } catch (error) {
-            console.error("[Client] Fetch failed, using fallback:", error);
+            console.error("[Client] Download failed, fallback to open:", error);
 
-            // Fallback: Sử dụng link trực tiếp với download attribute
-            const downloadLink = document.createElement("a");
-            downloadLink.href = url;
-            downloadLink.download = filename;
-            downloadLink.target = "_blank";
-            downloadLink.rel = "noopener noreferrer";
-            downloadLink.style.display = "none";
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-
-            setTimeout(() => {
-                document.body.removeChild(downloadLink);
-            }, 100);
+            // Fallback: Nếu vẫn lỗi thì mở tab mới (chấp nhận không tự download được)
+            window.open(url, "_blank");
         }
     };
 
