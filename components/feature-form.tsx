@@ -149,9 +149,10 @@ const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
     },
     "comic/generate": {
         label: "Comic Generation",
-        description: "Sinh trang comic từ prompt văn bản",
-        inputs: ["prompt", "panels", "style"],
-        defaultValues: { panels: "4", style: "anime_color" },
+        description:
+            "Tạo truyện tranh anime nhiều trang (1-3) với thoại tiếng Việt",
+        inputs: ["prompt", "pages", "panelsPerPage", "style"],
+        defaultValues: { pages: "2", panelsPerPage: "4", style: "anime" },
     },
     "story-comic": {
         label: "Story Comic (Multi-page)",
@@ -271,9 +272,9 @@ export default function FeatureForm({
         if (
             (selectedFeature === "comic/generate" ||
                 selectedFeature === "story-comic") &&
-            (!formData.prompt || formData.prompt.trim().length < 8)
+            (!formData.prompt || formData.prompt.trim().length < 5)
         ) {
-            setError("Prompt tối thiểu 8 ký tự.");
+            setError("Prompt tối thiểu 5 ký tự.");
             return false;
         }
 
@@ -605,8 +606,10 @@ export default function FeatureForm({
                                         : "Lighting Prompt"}
                                 </label>
                                 <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    {selectedFeature === "story-comic"
-                                        ? "≥ 8 ký tự"
+                                    {selectedFeature === "comic/generate"
+                                        ? "≥ 5 ký tự"
+                                        : selectedFeature === "story-comic"
+                                        ? "≥ 5 ký tự"
                                         : "Càng chi tiết càng tốt"}
                                 </span>
                             </div>
@@ -898,7 +901,7 @@ export default function FeatureForm({
                         {config.inputs.includes("panels") && (
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">
-                                    Number of Panels
+                                    Number of Panels (story-comic)
                                 </label>
                                 <div className={selectWrapper}>
                                     <select
@@ -923,14 +926,43 @@ export default function FeatureForm({
                             </div>
                         )}
 
-                        {config.inputs.includes("pages") && (
+                        {config.inputs.includes("panelsPerPage") && (
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">
-                                    Number of Pages
+                                    Panels per Page (3-9)
                                 </label>
                                 <div className={selectWrapper}>
                                     <select
-                                        value={formData.pages || "3"}
+                                        value={formData.panelsPerPage || "4"}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                panelsPerPage: e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="3">3 panels</option>
+                                        <option value="4">4 panels</option>
+                                        <option value="5">5 panels</option>
+                                        <option value="6">6 panels</option>
+                                        <option value="7">7 panels</option>
+                                        <option value="8">8 panels</option>
+                                        <option value="9">9 panels</option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("pages") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Number of Pages (1-3)
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={formData.pages || "2"}
                                         onChange={(e) =>
                                             setFormData({
                                                 ...formData,
@@ -939,6 +971,7 @@ export default function FeatureForm({
                                         }
                                         className={selectClass}
                                     >
+                                        <option value="1">1 page</option>
                                         <option value="2">2 pages</option>
                                         <option value="3">3 pages</option>
                                     </select>
@@ -1046,7 +1079,20 @@ export default function FeatureForm({
                                         }
                                         className={selectClass}
                                     >
-                                        {selectedFeature === "style" ? (
+                                        {selectedFeature === "comic/generate" ||
+                                        selectedFeature === "story-comic" ? (
+                                            <>
+                                                <option value="anime">
+                                                    Anime
+                                                </option>
+                                                <option value="manga">
+                                                    Manga
+                                                </option>
+                                                <option value="webtoon">
+                                                    Webtoon
+                                                </option>
+                                            </>
+                                        ) : selectedFeature === "style" ? (
                                             <>
                                                 <option value="anime">
                                                     anime
