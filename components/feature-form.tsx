@@ -52,7 +52,7 @@ const FEATURE_ENDPOINTS: Record<string, string> = {
     enhance: "/enhance",
     "ai-beautify": "/ai-beautify",
     "replace-bg": "/replace-bg",
-    style: "/style/replace-style",
+    style: "/style",
     "comic/generate": "/comic/generate",
     "story-comic": "/story-comic/generate",
 };
