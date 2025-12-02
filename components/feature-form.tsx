@@ -157,9 +157,20 @@ const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
     "story-comic": {
         label: "Story Comic (Multi-page)",
         description:
-            "Tạo truyện tranh anime màu nhiều trang với thoại tiếng Việt",
-        inputs: ["prompt", "pages", "panels_per_page"],
-        defaultValues: { pages: "3", panels_per_page: "4" },
+            "Tạo truyện tranh anime màu 2-3 trang với thoại tiếng Việt và tuỳ chọn style/quality",
+        inputs: [
+            "prompt",
+            "pages",
+            "panels_per_page",
+            "style_selector",
+            "quality_selector",
+        ],
+        defaultValues: {
+            pages: "3",
+            panels_per_page: "4",
+            style_selector: "Anime",
+            quality_selector: "Standard v3.1",
+        },
     },
 };
 
@@ -272,9 +283,15 @@ export default function FeatureForm({
         if (
             (selectedFeature === "comic/generate" ||
                 selectedFeature === "story-comic") &&
-            (!formData.prompt || formData.prompt.trim().length < 5)
+            (!formData.prompt ||
+                formData.prompt.trim().length <
+                    (selectedFeature === "story-comic" ? 8 : 5))
         ) {
-            setError("Prompt tối thiểu 5 ký tự.");
+            setError(
+                `Prompt tối thiểu ${
+                    selectedFeature === "story-comic" ? 8 : 5
+                } ký tự.`
+            );
             return false;
         }
 
@@ -322,6 +339,26 @@ export default function FeatureForm({
             }
             if (formData.height && !checkDim(height)) {
                 setError("Height phải trong 256-1024 và bội số của 64.");
+                return false;
+            }
+        }
+
+        if (selectedFeature === "story-comic") {
+            const pages = Number(
+                formData.pages || config.defaultValues?.pages || 3
+            );
+            if (![2, 3].includes(pages)) {
+                setError("Số trang hợp lệ: 2 hoặc 3.");
+                return false;
+            }
+
+            const panelsPerPage = Number(
+                formData.panels_per_page ||
+                    config.defaultValues?.panels_per_page ||
+                    4
+            );
+            if (![3, 4].includes(panelsPerPage)) {
+                setError("Panels per page hợp lệ: 3 hoặc 4.");
                 return false;
             }
         }
@@ -609,7 +646,7 @@ export default function FeatureForm({
                                     {selectedFeature === "comic/generate"
                                         ? "≥ 5 ký tự"
                                         : selectedFeature === "story-comic"
-                                        ? "≥ 5 ký tự"
+                                        ? "≥ 8 ký tự"
                                         : "Càng chi tiết càng tốt"}
                                 </span>
                             </div>
@@ -958,11 +995,21 @@ export default function FeatureForm({
                         {config.inputs.includes("pages") && (
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">
-                                    Number of Pages (1-3)
+                                    Number of Pages (
+                                    {selectedFeature === "story-comic"
+                                        ? "2-3"
+                                        : "1-3"}
+                                    )
                                 </label>
                                 <div className={selectWrapper}>
                                     <select
-                                        value={formData.pages || "2"}
+                                        value={
+                                            formData.pages ||
+                                            config.defaultValues?.pages ||
+                                            (selectedFeature === "story-comic"
+                                                ? "3"
+                                                : "2")
+                                        }
                                         onChange={(e) =>
                                             setFormData({
                                                 ...formData,
@@ -971,9 +1018,28 @@ export default function FeatureForm({
                                         }
                                         className={selectClass}
                                     >
-                                        <option value="1">1 page</option>
-                                        <option value="2">2 pages</option>
-                                        <option value="3">3 pages</option>
+                                        {selectedFeature === "story-comic" ? (
+                                            <>
+                                                <option value="2">
+                                                    2 pages
+                                                </option>
+                                                <option value="3">
+                                                    3 pages
+                                                </option>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <option value="1">
+                                                    1 page
+                                                </option>
+                                                <option value="2">
+                                                    2 pages
+                                                </option>
+                                                <option value="3">
+                                                    3 pages
+                                                </option>
+                                            </>
+                                        )}
                                     </select>
                                     <SelectCaret />
                                 </div>
@@ -983,11 +1049,16 @@ export default function FeatureForm({
                         {config.inputs.includes("panels_per_page") && (
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">
-                                    Panels per Page
+                                    Panels per Page (3-4)
                                 </label>
                                 <div className={selectWrapper}>
                                     <select
-                                        value={formData.panels_per_page || "4"}
+                                        value={
+                                            formData.panels_per_page ||
+                                            config.defaultValues
+                                                ?.panels_per_page ||
+                                            "4"
+                                        }
                                         onChange={(e) =>
                                             setFormData({
                                                 ...formData,
@@ -1118,6 +1189,97 @@ export default function FeatureForm({
                                                 anime_color
                                             </option>
                                         )}
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("style_selector") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Style Preset (Animagine)
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={
+                                            formData.style_selector ||
+                                            config.defaultValues?.style_selector ||
+                                            ""
+                                        }
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                style_selector:
+                                                    e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="">(None)</option>
+                                        <option value="Cinematic">
+                                            Cinematic
+                                        </option>
+                                        <option value="Photographic">
+                                            Photographic
+                                        </option>
+                                        <option value="Anime">Anime</option>
+                                        <option value="Manga">Manga</option>
+                                        <option value="Digital Art">
+                                            Digital Art
+                                        </option>
+                                        <option value="Pixel art">
+                                            Pixel art
+                                        </option>
+                                        <option value="Fantasy art">
+                                            Fantasy art
+                                        </option>
+                                        <option value="Neonpunk">
+                                            Neonpunk
+                                        </option>
+                                        <option value="3D Model">
+                                            3D Model
+                                        </option>
+                                    </select>
+                                    <SelectCaret />
+                                </div>
+                            </div>
+                        )}
+
+                        {config.inputs.includes("quality_selector") && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">
+                                    Quality Preset
+                                </label>
+                                <div className={selectWrapper}>
+                                    <select
+                                        value={
+                                            formData.quality_selector ||
+                                            config.defaultValues?.quality_selector ||
+                                            ""
+                                        }
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                quality_selector:
+                                                    e.target.value,
+                                            })
+                                        }
+                                        className={selectClass}
+                                    >
+                                        <option value="">(None)</option>
+                                        <option value="Standard v3.0">
+                                            Standard v3.0
+                                        </option>
+                                        <option value="Standard v3.1">
+                                            Standard v3.1
+                                        </option>
+                                        <option value="Light v3.1">
+                                            Light v3.1
+                                        </option>
+                                        <option value="Heavy v3.1">
+                                            Heavy v3.1
+                                        </option>
                                     </select>
                                     <SelectCaret />
                                 </div>
