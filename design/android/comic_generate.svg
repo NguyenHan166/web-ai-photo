@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1080" height="2400" viewBox="0 0 1080 2400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1080" y2="2400">
+      <stop offset="0%" stop-color="#0B1221"/>
+      <stop offset="50%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#0B1327"/>
+    </linearGradient>
+    <linearGradient id="comic-generate-accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#eab308"/>
+    </linearGradient>
+    <linearGradient id="panelStroke" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.04)"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="120" result="blur"/>
+    </filter>
+  </defs>
+
+  <rect width="1080" height="2400" fill="url(#bgGradient)"/>
+  <circle cx="810" cy="240" r="320" fill="#eab308" opacity="0.12" filter="url(#glow)"/>
+  <circle cx="270" cy="520" r="260" fill="#f97316" opacity="0.10" filter="url(#glow)"/>
+
+  <g>
+    <rect x="60" y="80" width="960" height="140" rx="28" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)"/>
+    <text x="92" y="140" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="34" font-weight="800">AI Photo Studio · Android</text>
+    <text x="92" y="180" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="24" font-weight="600">Tạo truyện tranh anime nhiều trang.</text>
+    <rect x="820" y="104" width="170" height="44" rx="16" fill="url(#comic-generate-accent)" opacity="0.9"/>
+    <text x="905" y="133" fill="#0B1221" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="800" text-anchor="middle">Comic</text>
+    <rect x="820" y="154" width="170" height="44" rx="16" fill="rgba(255,255,255,0.06)"/>
+    <text x="905" y="183" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="20" font-weight="700" text-anchor="middle">ETA 60-240s</text>
+  </g>
+
+  <rect x="60" y="260" width="960" height="1458" rx="36" fill="rgba(255,255,255,0.04)" stroke="url(#panelStroke)" />
+  <text x="84" y="304" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="30" font-weight="800">Control Panel</text>
+  <text x="84" y="338" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="600">Comic Generation</text>
+  
+        <g>
+          <rect x="80" y="330" width="150" height="44" rx="18" fill="url(#comic-generate-accent)" opacity="0.22" stroke="rgba(255,255,255,0.16)"/>
+          <text x="155" y="360" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="20" font-weight="700" text-anchor="middle">Nhiều trang</text>
+        </g>
+
+        <g>
+          <rect x="242" y="330" width="190" height="44" rx="18" fill="url(#comic-generate-accent)" opacity="0.22" stroke="rgba(255,255,255,0.16)"/>
+          <text x="337" y="360" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="20" font-weight="700" text-anchor="middle">Bảng truyện 3-9</text>
+        </g>
+
+        <g>
+          <rect x="444" y="330" width="140" height="44" rx="18" fill="url(#comic-generate-accent)" opacity="0.22" stroke="rgba(255,255,255,0.16)"/>
+          <text x="514" y="360" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="20" font-weight="700" text-anchor="middle">Màu anime</text>
+        </g>
+  
+  
+    <g>
+      <rect x="80" y="420" width="450" height="120" rx="24" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="102" y="464" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="26" font-weight="700">Story prompt</text>
+      <text x="102" y="502" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="500">≥ 5 ký tự, thoại tiếng Việt</text>
+    </g>
+
+    <g>
+      <rect x="550" y="420" width="450" height="120" rx="24" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="572" y="464" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="26" font-weight="700">Pages</text>
+      <text x="572" y="502" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="500">1 - 3</text>
+    </g>
+
+    <g>
+      <rect x="80" y="564" width="450" height="120" rx="24" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="102" y="608" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="26" font-weight="700">Panels per page</text>
+      <text x="102" y="646" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="500">3 - 9</text>
+    </g>
+
+    <g>
+      <rect x="550" y="564" width="450" height="120" rx="24" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="572" y="608" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="26" font-weight="700">Style</text>
+      <text x="572" y="646" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="500">anime / manga / webtoon</text>
+    </g>
+
+    <g>
+      <rect x="80" y="708" width="450" height="120" rx="24" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="102" y="752" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="26" font-weight="700">Dialogue</text>
+      <text x="102" y="790" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="500">Tự sinh theo prompt</text>
+    </g>
+  
+    <g>
+      <text x="80" y="900" fill="#E5E7EB" font-family="Inter, 'Segoe UI', sans-serif" font-size="26" font-weight="800">Preview</text>
+      <text x="220" y="900" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="600">Original vs Result</text>
+      <g>
+        <rect x="80" y="936" width="448" height="310" rx="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)"/>
+        <rect x="100" y="956" width="408" height="270" rx="18" fill="#111827" stroke="rgba(255,255,255,0.06)"/>
+        <text x="104" y="1226" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="600">Ảnh gốc</text>
+      </g>
+      <g>
+        <rect x="552" y="936" width="448" height="310" rx="24" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)"/>
+        <rect x="572" y="956" width="408" height="270" rx="18" fill="#0B1221" stroke="url(#comic-generate-accent)" stroke-opacity="0.45"/>
+        <text x="576" y="1226" fill="#10B981" font-family="Inter, 'Segoe UI', sans-serif" font-size="22" font-weight="700">Kết quả AI</text>
+      </g>
+    </g>
+  
+    <g>
+      <rect x="80" y="1308" width="920" height="108" rx="22" fill="url(#comic-generate-accent)" />
+      <text x="540" y="1374" fill="#0B1221" font-family="Inter, 'Segoe UI', sans-serif" font-size="30" font-weight="800" text-anchor="middle">Gửi đến AI · Comic</text>
+    </g>
+    <g>
+      <rect x="80" y="1442" width="920" height="18" rx="9" fill="rgba(255,255,255,0.08)"/>
+      <rect x="80" y="1442" width="322" height="18" rx="9" fill="url(#comic-generate-accent)" opacity="0.9"/>
+      <text x="988" y="1458" fill="#9CA3AF" font-family="Inter, 'Segoe UI', sans-serif" font-size="18" font-weight="700" text-anchor="end">Đang chuẩn bị...</text>
+    </g>
+
+    <text x="60" y="2340" fill="#6B7280" font-family="Inter, 'Segoe UI', sans-serif" font-size="20" font-weight="600">Figma import · SVG · comic/generate</text>
+</svg>
