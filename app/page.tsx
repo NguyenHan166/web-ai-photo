@@ -20,6 +20,7 @@ interface ProcessResult {
         outputs?: Array<{ url: string; index: number }>;
     };
     page_url?: string;
+    comic_url?: string;
     pages?: Array<{
         page_index: number;
         page_url: string;
@@ -98,6 +99,8 @@ export default function Home() {
             imageUrls = result.pages
                 .map((page) => page.page_url || page.presigned_url)
                 .filter(Boolean);
+        } else if (result.comic_url) {
+            imageUrls = [result.comic_url];
         } else if (result.page_url) {
             imageUrls = [result.page_url];
         } else if (result.data?.outputs && Array.isArray(result.data.outputs)) {

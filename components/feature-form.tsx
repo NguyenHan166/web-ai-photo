@@ -24,6 +24,7 @@ interface ProcessResult {
         outputs?: Array<{ url: string; index: number }>;
     };
     page_url?: string; // For comic generation
+    comic_url?: string;
     meta?: Record<string, any>;
     error?: {
         message: string;
@@ -1204,14 +1205,14 @@ export default function FeatureForm({
                                     <select
                                         value={
                                             formData.style_selector ||
-                                            config.defaultValues?.style_selector ||
+                                            config.defaultValues
+                                                ?.style_selector ||
                                             ""
                                         }
                                         onChange={(e) =>
                                             setFormData({
                                                 ...formData,
-                                                style_selector:
-                                                    e.target.value,
+                                                style_selector: e.target.value,
                                             })
                                         }
                                         className={selectClass}
@@ -1255,7 +1256,8 @@ export default function FeatureForm({
                                     <select
                                         value={
                                             formData.quality_selector ||
-                                            config.defaultValues?.quality_selector ||
+                                            config.defaultValues
+                                                ?.quality_selector ||
                                             ""
                                         }
                                         onChange={(e) =>
